@@ -9,7 +9,7 @@
       </router-link>
       <v-spacer></v-spacer>
       <v-btn flat target="_blank">
-        <span class="mr-2" @click="goToAddNoteView">Add note</span>
+        <span class="mr-2" @click="goToAddNotePreview">Add note</span>
       </v-btn>
     </v-toolbar>
     <v-content class="appContent">
@@ -27,75 +27,77 @@
   </v-app>
 </template>
 <script>
+import { notesCollection } from "../firebaseConfig.js";
+
 export default {
   name: "App",
   data() {
     return {
       notes: [],
-      allTags: [],
-      exampleNote: {
-        title: "Your awesome note title",
-        description:
-          "One to two paragraph statement about your product and what it does.",
-        creationDate: new Date(),
-        tags: ["tech"],
-        content:
-          "## Meta\n" +
-          "\n" +
-          "> Your Name – [@YourTwitter](https://twitter.com/dbader_org) – YourEmail@example.com\n" +
-          "\n" +
-          "Distributed under the XYZ license. See ``LICENSE`` for more information.\n" +
-          "\n" +
-          "[https://github.com/yourname/github-link](https://github.com/dbader/)"
-      }
+      notes2: [],
+      allTags: []
     };
   },
-  watch: {
-    notes: {
-      immediate: true,
-      deep: true,
-      handler(notes) {
-        localStorage.setItem("notes", JSON.stringify(notes));
-      }
-    }
-  },
+
   methods: {
-    goToAddNoteView() {
-      localStorage.setItem("currentNote", null);
+    goToAddNotePreview() {
       this.$nextTick(() => {
         this.$router.push({
           name: "note",
-          params: { noteId: "draft", note: this.exampleNote }
+          params: { noteId: "draft" }
         });
       });
     },
-    addNewNote({ note, redirect = true }) {
-      this.notes = [note, ...this.notes];
-      localStorage.setItem("currentNote", null);
-      if (redirect) {
-        this.$router.push("/");
-      } else {
-        this.$router.push(`/note/${note.id}`);
-      }
+    async addNewNote({ note, redirect = true }) {
+      const newNoteRef = await notesCollection.doc();
+      newNoteRef
+        .set({ ...note, id: newNoteRef.id, creationDate: new Date() })
+        .then(() => {
+          this.notes.push({ ...note, id: newNoteRef.id });
+
+          if (redirect) {
+            this.$router.push("/");
+          } else {
+            this.$router.push(`/note/${newNoteRef.id}`);
+          }
+        })
+        .catch(e => {
+          //eslint-disable-next-line
+          console.warn(e);
+        });
     },
-    updateNote({ note, redirect = true }) {
-      const indexToUpdate = this.notes.findIndex(note => note.id === note.id);
-      this.$set(this.notes, indexToUpdate, note);
-      if (redirect) {
-        this.$router.push("/");
-      }
+    async updateNote({ note, redirect = true }) {
+      notesCollection
+        .doc(note.id)
+        .set(note, { merge: true })
+        .then(() => {
+          if (redirect) {
+            this.$router.push("/");
+          }
+        })
+        .catch(e => {
+          //eslint-disable-next-line
+          console.warn(e);
+        });
     },
-    deleteNote(noteId) {
-      this.notes = this.notes.filter(note => note.id !== noteId);
+    async deleteNote(noteId) {
+      notesCollection
+        .doc(noteId)
+        .delete()
+        .then(() => {
+          this.notes = this.notes.filter(note => note.id !== noteId);
+        })
+        .catch(e => {
+          //eslint-disable-next-line
+          console.warn(e);
+        });
     }
   },
-  mounted() {
-    const rawNotes = localStorage.getItem("notes");
-    if (rawNotes) {
-      this.notes = JSON.parse(rawNotes).sort((a, b) =>
-        new Date(a.creationDate) > new Date(b.creationDate) ? -1 : 1
-      );
-    }
+  async mounted() {
+    const snapshot = await notesCollection.get();
+    this.notes = snapshot.docs.map(doc => {
+      return { id: doc.id, ...doc.data() };
+    });
   }
 };
 </script>

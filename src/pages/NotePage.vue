@@ -31,7 +31,7 @@
         </v-container>
       </v-flex>
       <v-flex xs12 sm6 class="mx-auto">
-        <NoteView v-if="note" :note="note">
+        <NotePreview v-if="note" :note="note">
           <v-btn
             small
             flat
@@ -42,14 +42,16 @@
             <v-icon v-if="!isEdited">edit</v-icon>
             <v-icon v-else>save</v-icon>
           </v-btn>
-        </NoteView>
+        </NotePreview>
       </v-flex>
     </v-layout>
   </v-layout>
 </template>
 <script>
 import NoteEdit from "@/components/NoteEdit";
-import NoteView from "@/components/NoteView";
+import NotePreview from "@/components/NotePreview";
+const { notesCollection } = require("../../firebaseConfig.js");
+
 export default {
   name: "NotePageView",
   props: {
@@ -60,13 +62,16 @@ export default {
   },
   components: {
     NoteEdit,
-    NoteView
+    NotePreview
   },
   watch: {
     $route: {
-      handler(newRoute, oldRoute) {
-        if (newRoute !== oldRoute && newRoute.params.note) {
-          this.note = newRoute.params.note;
+      deep: true,
+      immediate: true,
+      handler(newRoute) {
+        if (newRoute.params.noteId === "draft") {
+          this.isEdited = true;
+          this.note = this.exampleNote;
         }
       }
     }
@@ -75,7 +80,21 @@ export default {
     return {
       note: null,
       notFound: false,
-      isEdited: false
+      isEdited: false,
+      exampleNote: {
+        title: "Your awesome note title",
+        description:
+          "One to two paragraph statement about your product and what it does.",
+        tags: ["tech"],
+        content:
+          "## Meta\n" +
+          "\n" +
+          "> Your Name – [@YourTwitter](https://twitter.com/dbader_org) – YourEmail@example.com\n" +
+          "\n" +
+          "Distributed under the XYZ license. See ``LICENSE`` for more information.\n" +
+          "\n" +
+          "[https://github.com/yourname/github-link](https://github.com/dbader/)"
+      }
     };
   },
   computed: {},
@@ -94,39 +113,28 @@ export default {
       this.isEdited = !this.isEdited;
     },
     saveNewNote({ redirect }) {
-      const newNote = { ...this.note, id: this.uuid() };
+      const newNote = { ...this.note };
       this.$emit("onNewNoteSaved", { note: newNote, redirect });
     },
     updateNote({ redirect }) {
       this.$emit("onNoteUpdate", { redirect, note: this.note });
-    },
-    uuid() {
-      return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(
-        c
-      ) {
-        const r = (Math.random() * 16) | 0,
-          v = c == "x" ? r : (r & 0x3) | 0x8;
-        return v.toString(16);
-      });
     }
   },
-  mounted() {
-    if (this.$route.params.noteId === "draft") {
-      this.isEdited = true;
+  async mounted() {
+    if (this.$route.params.noteId) {
+      if (this.$route.params.noteId === "draft") {
+        this.isEdited = true;
+      } else {
+        const noteRef = await notesCollection
+          .doc(this.$route.params.noteId)
+          .get();
+        if (noteRef.exists) {
+          this.note = noteRef.data();
+        }
+      }
     }
     if (this.$route.params.note) {
-      localStorage.setItem(
-        "currentNote",
-        JSON.stringify(this.$route.params.note)
-      );
       this.note = this.$route.params.note;
-    } else {
-      const localStorageNote = localStorage.getItem("currentNote");
-      if (localStorageNote) {
-        this.note = JSON.parse(localStorageNote);
-      } else {
-        this.notFound = true;
-      }
     }
   }
 };

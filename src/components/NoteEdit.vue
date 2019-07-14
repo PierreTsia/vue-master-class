@@ -113,8 +113,7 @@ export default {
     handleDeleteChip(tagToDelete) {
       this.newTags = this.newTags.filter(tag => tag !== tagToDelete);
     }
-  },
-  mounted() {}
+  }
 };
 </script>
 

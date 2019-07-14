@@ -11,7 +11,8 @@
 </template>
 
 <script>
-import NoteItem from "@/components/NoteItem.vue";
+import NoteItem from "@/components/NoteListItem.vue";
+import _ from "lodash";
 export default {
   name: "NotesList",
   props: {
@@ -32,14 +33,15 @@ export default {
   },
   computed: {
     activeNotes() {
-      return this.notes.filter(
-        note =>
-          this.activeTags.includes("all") ||
-          note.tags.some(noteTag => this.activeTags.includes(noteTag))
-      );
+      return _.sortBy(
+        this.notes.filter(
+          note =>
+            this.activeTags.includes("all") ||
+            note.tags.some(noteTag => this.activeTags.includes(noteTag))
+        ),
+        "creationDate"
+      ).reverse();
     }
   }
 };
 </script>
-
-<style lang="stylus"></style>

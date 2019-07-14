@@ -27,9 +27,6 @@ export default {
       default: () => []
     }
   },
-  data() {
-    return {};
-  },
   methods: {
     handleEmitMenuItem(item) {
       this.$emit("onMenuItemClick", item);

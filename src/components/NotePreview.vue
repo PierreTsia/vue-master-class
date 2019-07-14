@@ -1,5 +1,5 @@
 <template>
-  <v-container v-if="note" class="noteView">
+  <v-container v-if="note" class="NotePreview">
     <v-layout row>
       <h1 class="title--primary pb-3">{{ note.title }}</h1>
       <slot />
@@ -34,7 +34,7 @@ import { format } from "date-fns";
 import fr from "date-fns/locale/fr";
 import marked from "marked";
 export default {
-  name: "NoteView",
+  name: "NotePreview",
   props: {
     note: {
       type: Object,
@@ -43,24 +43,25 @@ export default {
   },
   computed: {
     formattedDate() {
-      return format(this.note.creationDate, "dddd D MMMM YYYY hh:mm", {
+      const noteDate = this.note.creationDate
+        ? this.note.creationDate.toDate()
+        : new Date();
+      return format(noteDate, "dddd D MMMM YYYY", {
         locale: fr
       });
     },
     formattedContent() {
       return marked(this.note.content, {
-        sanitize: true,
         tables: true,
         gfm: true
       });
     }
-  },
-  mounted() {}
+  }
 };
 </script>
 
 <style lang="stylus">
-.noteView
+.NotePreview
     background-color white
     border-color 4px
 .noteDescription

@@ -44,12 +44,10 @@ export default {
         this.$emit("onTagsChanged", tagLabels);
       }
     },
-    notes: {
-      immediate: true,
-      deep: true,
-      handler(notes) {
-        if (notes.length) {
-          localStorage.setItem("notes", JSON.stringify(this.notes));
+    isAllSelected: {
+      handler(value) {
+        if (value) {
+          this.activeTags = [];
         }
       }
     }
@@ -78,13 +76,14 @@ export default {
     activeTagsLabels() {
       const activeLabels = this.activeTags.map(tag => tag.label);
       if (this.isAllSelected) {
-        return ["all", ...activeLabels];
+        return ["all"];
       }
       return activeLabels;
     }
   },
   methods: {
     setActiveTag(tag) {
+      this.isAllSelected = false;
       if (this.activeTags.includes(tag)) {
         this.activeTags = this.activeTags.filter(
           existingTag => existingTag !== tag
@@ -92,11 +91,7 @@ export default {
       } else {
         this.activeTags.push(tag);
       }
-    },
-    deleteNote(noteId) {
-      this.notes = this.notes.filter(n => n.id !== noteId);
     }
   }
 };
 </script>
-<style lang="stylus"></style>

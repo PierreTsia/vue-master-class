@@ -59,7 +59,10 @@ export default {
   },
   computed: {
     formattedDate() {
-      return format(this.note.creationDate, "dddd D MMMM YYYY hh:mm", {
+      const noteDate = this.note.creationDate
+        ? this.note.creationDate.toDate()
+        : new Date();
+      return format(noteDate, "dddd D MMMM YYYY", {
         locale: fr
       });
     }
