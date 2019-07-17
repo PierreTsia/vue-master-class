@@ -58,7 +58,7 @@ export default {
   },
   computed: {
     countedTags() {
-      return _.groupBy(
+      return _.countBy(
         _.flatMap(this.notes, note => note.tags).map(tag => {
           return { label: tag };
         }),
@@ -67,8 +67,8 @@ export default {
     },
     sortedTags() {
       return _.sortBy(
-        _.map(this.countedTags, groupOfTags => {
-          return { label: groupOfTags[0].label, count: groupOfTags.length };
+        _.map(this.countedTags, (count, tag) => {
+          return { label: tag, count };
         }),
         "count"
       ).reverse();
